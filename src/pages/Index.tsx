@@ -255,13 +255,7 @@ const Index = () => {
                         Accounts
                       </Button>
                       
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start text-lg mt-2"
-                        onClick={() => handleMobileNavClick("admin")}
-                      >
-                        Admin
-                      </Button>
+                      
                     </div>
                   </div>
                 </SheetContent>
