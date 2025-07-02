@@ -2,8 +2,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { DollarSign, ShoppingCart, Wrench, TrendingUp } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
-const AdminOverview = () => {
+interface AdminOverviewProps {
+  adminName: string;
+}
+const AdminOverview = ({ adminName }: AdminOverviewProps) => {
   // Mock data - replace with real data from your backend
   const revenueData = [
     { month: "Jan", revenue: 15000, bookings: 45, parts: 120 },
@@ -23,7 +27,8 @@ const AdminOverview = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold text-gray-900">Dashboard Overview</h2>
-        <p className="text-gray-600">Welcome back! Here's what's happening with your business.</p>
+        <p className="text-gray-600">Welcome back, {adminName}! Here's what's happening with your business.</p>
+
       </div>
 
       {/* Stats Cards */}

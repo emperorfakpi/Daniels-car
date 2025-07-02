@@ -36,14 +36,14 @@ const handleLogin = async (e: React.FormEvent) => {
   if (error) {
     alert("Login failed: " + error.message);
   } else {
-    const userEmail = data.user?.email;
-    const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
+    const userRole = data.user?.user_metadata?.role;
 
-    if (userEmail === adminEmail) {
-      setCurrentView("admin");
+    if (userRole === "admin") {
+     setCurrentView("admin");
     } else {
-      setCurrentView("home"); // 👈 now regular users go to user dashboard/view
+     setCurrentView("home");
     }
+
     
   }
 };
@@ -65,11 +65,12 @@ const handleLogin = async (e: React.FormEvent) => {
       options: {
         data: {
           name,
-          phone
+          phone,
+          role: "user", // 👈 Default role
         }
       }
     });
-  
+    
     if (error) {
       alert("Signup failed: " + error.message);
     } else {
