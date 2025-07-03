@@ -11,11 +11,13 @@ import { supabase } from "@/lib/supabaseClient";
 
 interface AuthPageProps {
   onBack: () => void;
-  setCurrentView: (view: string) => void; // 👈 ADD THIS
+  setCurrentView: (view: string) => void;
+  setIsLoggedIn: (loggedIn: boolean) => void; // 👈 ADD THIS
 }
 
 
-const AuthPage = ({ onBack, setCurrentView }: AuthPageProps) => {
+
+const AuthPage = ({ onBack, setCurrentView, setIsLoggedIn }: AuthPageProps) => {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [signupData, setSignupData] = useState({ 
     name: "", 
@@ -41,11 +43,14 @@ const handleLogin = async (e: React.FormEvent) => {
     if (userRole === "admin") {
      setCurrentView("admin");
     } else {
-     setCurrentView("home");
+     setCurrentView("dashboard");
     }
 
     
   }
+  setIsLoggedIn(true);
+  setCurrentView("dashboard");
+
 };
 
   

@@ -10,6 +10,8 @@ import ProductCatalog from "@/components/ProductCatalog";
 import Cart from "@/components/Cart";
 import AuthPage from "@/components/AuthPage";
 import AdminDashboard from "@/components/AdminDashboard";
+import UserDashboard from "@/components/UserDashboard";
+
 
 const Index = () => {
   const [currentView, setCurrentView] = useState("home");
@@ -106,19 +108,33 @@ const Index = () => {
     });
   };
 
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // 👈 Add this
+
+
   const handleMobileNavClick = (view: string) => {
     setCurrentView(view);
     setIsMobileMenuOpen(false);
   };
 
-  if (currentView === "booking") {
-    return <ServiceBooking onBack={() => setCurrentView("home")} />;
+  if (currentView === "dashboard") {
+    return (
+      <UserDashboard
+        onBookService={() => setCurrentView("booking")}
+        onShopParts={() => setCurrentView("products")}
+      />
+    );
   }
+  
+
+  if (currentView === "booking") {
+    return <ServiceBooking onBack={() => setCurrentView(isLoggedIn ? "dashboard" : "home")} />;
+  }
+  
 
   if (currentView === "products") {
     return (
       <ProductCatalog
-        onBack={() => setCurrentView("home")}
+      onBack={() => setCurrentView(isLoggedIn ? "dashboard" : "home")}
         onAddToCart={handleAddToCart}
         onViewCart={() => setIsCartOpen(true)}
         cartItemCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
@@ -127,9 +143,15 @@ const Index = () => {
   }
 
   if (currentView === "auth") {
-    return <AuthPage onBack={() => setCurrentView("home")} setCurrentView={setCurrentView} />
-    ;
+    return (
+      <AuthPage
+        onBack={() => setCurrentView(isLoggedIn ? "dashboard" : "home")}
+        setCurrentView={setCurrentView}
+        setIsLoggedIn={setIsLoggedIn} // 👈 ADD THIS
+      />
+    );
   }
+  
 
   if (currentView === "admin") {
     return <AdminDashboard onBack={() => setCurrentView("home")} />;
