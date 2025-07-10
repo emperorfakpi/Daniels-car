@@ -109,6 +109,8 @@ const Index = () => {
   };
 
   const [isLoggedIn, setIsLoggedIn] = useState(false); // 👈 Add this
+  const [userRole, setUserRole] = useState<"admin" | "user" | null>(null);
+
 
 
   const handleMobileNavClick = (view: string) => {
@@ -148,6 +150,7 @@ const Index = () => {
         onBack={() => setCurrentView(isLoggedIn ? "dashboard" : "home")}
         setCurrentView={setCurrentView}
         setIsLoggedIn={setIsLoggedIn} // 👈 ADD THIS
+        setUserRole={setUserRole} 
       />
     );
   }

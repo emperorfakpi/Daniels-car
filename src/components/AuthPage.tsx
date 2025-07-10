@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,16 +7,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Car, Mail, Lock, User, Phone } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
-
 interface AuthPageProps {
   onBack: () => void;
   setCurrentView: (view: string) => void;
-  setIsLoggedIn: (loggedIn: boolean) => void; // 👈 ADD THIS
+  setIsLoggedIn: (loggedIn: boolean) => void;
+  setUserRole: React.Dispatch<React.SetStateAction<"admin" | "user" | null>>;
+
 }
 
-
-
-const AuthPage = ({ onBack, setCurrentView, setIsLoggedIn }: AuthPageProps) => {
+const AuthPage = ({ onBack, setCurrentView, setIsLoggedIn, setUserRole }: AuthPageProps) => {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [signupData, setSignupData] = useState({ 
     name: "", 
@@ -27,43 +25,39 @@ const AuthPage = ({ onBack, setCurrentView, setIsLoggedIn }: AuthPageProps) => {
     confirmPassword: "" 
   });
 
-  
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { email, password } = loginData;
 
-const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  const { email, password } = loginData;
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error) {
-    alert("Login failed: " + error.message);
-  } else {
-    const userRole = data.user?.user_metadata?.role;
-
-    if (userRole === "admin") {
-     setCurrentView("admin");
+    if (error) {
+      alert("Login failed: " + error.message);
     } else {
-     setCurrentView("dashboard");
+      const userRole = data.user?.user_metadata?.role;
+      setIsLoggedIn(true);
+      setUserRole(userRole);
+
+      if (userRole === "admin") {
+        setUserRole("admin");
+        setCurrentView("admin");
+      } else {
+        setUserRole("user");
+        setCurrentView("dashboard");
+      }
+      
     }
-
-    
-  }
-  setIsLoggedIn(true);
-  setCurrentView("dashboard");
-
-};
-
-  
+  };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     const { name, email, password, confirmPassword, phone } = signupData;
-  
+
     if (password !== confirmPassword) {
       alert("Passwords do not match");
       return;
     }
-  
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -71,23 +65,21 @@ const handleLogin = async (e: React.FormEvent) => {
         data: {
           name,
           phone,
-          role: "user", // 👈 Default role
+          role: "user",
         }
       }
     });
-    
+
     if (error) {
       alert("Signup failed: " + error.message);
     } else {
       alert("Signup successful! Please check your email to confirm.");
-      onBack(); // Optional: Return to home or login
+      onBack();
     }
   };
-  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -104,12 +96,11 @@ const handleLogin = async (e: React.FormEvent) => {
                 <p className="text-sm text-gray-600">Professional Auto Services</p>
               </div>
             </div>
-            <div className="w-16"></div> {/* Spacer for centering */}
+            <div className="w-16"></div>
           </div>
         </div>
       </header>
 
-      {/* Auth Section */}
       <section className="py-16">
         <div className="max-w-md mx-auto px-4">
           <Card>
@@ -123,7 +114,7 @@ const handleLogin = async (e: React.FormEvent) => {
                   <TabsTrigger value="login">Login</TabsTrigger>
                   <TabsTrigger value="signup">Sign Up</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="login" className="space-y-4">
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
@@ -162,7 +153,7 @@ const handleLogin = async (e: React.FormEvent) => {
                     </p>
                   </form>
                 </TabsContent>
-                
+
                 <TabsContent value="signup" className="space-y-4">
                   <form onSubmit={handleSignup} className="space-y-4">
                     <div className="space-y-2">

@@ -1,11 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Search, ShoppingCart, Star, Filter } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ArrowLeft,
+  Search,
+  ShoppingCart,
+  Star,
+  Filter,
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabaseClient";
 
 interface Product {
   id: string;
@@ -27,96 +40,59 @@ interface ProductCatalogProps {
   cartItemCount: number;
 }
 
-const ProductCatalog = ({ onBack, onAddToCart, onViewCart, cartItemCount }: ProductCatalogProps) => {
+const ProductCatalog = ({
+  onBack,
+  onAddToCart,
+  onViewCart,
+  cartItemCount,
+}: ProductCatalogProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("name");
+  const [products, setProducts] = useState<Product[]>([]);
 
-  const products: Product[] = [
-    {
-      id: "1",
-      name: "Mobil 1 Synthetic Oil 5W-30",
-      price: 12000,
-      originalPrice: 15000,
-      rating: 4.8,
-      reviews: 124,
-      category: "oils",
-      brand: "Mobil",
-      inStock: true,
-      image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300"
-    },
-    {
-      id: "2",
-      name: "Bosch Spark Plugs Set of 4",
-      price: 8500,
-      rating: 4.7,
-      reviews: 89,
-      category: "engine",
-      brand: "Bosch",
-      inStock: true,
-      image: "https://images.unsplash.com/photo-1486496572940-2bb2341fdbdf?w=300"
-    },
-    {
-      id: "3",
-      name: "Michelin Tire 195/65R15",
-      price: 35000,
-      rating: 4.9,
-      reviews: 203,
-      category: "tires",
-      brand: "Michelin",
-      inStock: true,
-      image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300"
-    },
-    {
-      id: "4",
-      name: "Brake Pads Front Set",
-      price: 18000,
-      originalPrice: 22000,
-      rating: 4.6,
-      reviews: 67,
-      category: "brakes",
-      brand: "Brembo",
-      inStock: false,
-      image: "https://images.unsplash.com/photo-1486496572940-2bb2341fdbdf?w=300"
-    },
-    {
-      id: "5",
-      name: "Car Battery 12V 75Ah",
-      price: 45000,
-      rating: 4.8,
-      reviews: 156,
-      category: "electrical",
-      brand: "Varta",
-      inStock: true,
-      image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300"
-    },
-    {
-      id: "6",
-      name: "Air Filter High Performance",
-      price: 6500,
-      rating: 4.5,
-      reviews: 45,
-      category: "filters",
-      brand: "K&N",
-      inStock: true,
-      image: "https://images.unsplash.com/photo-1486496572940-2bb2341fdbdf?w=300"
-    }
-  ];
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-  const categories = [
-    { value: "all", label: "All Categories" },
-    { value: "oils", label: "Oils & Fluids" },
-    { value: "engine", label: "Engine Parts" },
-    { value: "tires", label: "Tires" },
-    { value: "brakes", label: "Brake System" },
-    { value: "electrical", label: "Electrical" },
-    { value: "filters", label: "Filters" }
-  ];
+      if (error) {
+        console.error("Error fetching products:", error);
+      } else {
+        const cleanedProducts = (data ?? []).map((item: any) => ({
+          id: item.id,
+          name: item.name ?? "Unnamed Product",
+          price: item.price ?? 0,
+          originalPrice: item.originalPrice ?? null,
+          rating: item.rating ?? 4.2,
+          reviews: item.reviews ?? 0,
+          category: (item.category ?? "other").toLowerCase().trim(),
+          brand: item.brand ?? "Generic",
+          inStock: Boolean(item.stock),
+          image:
+            item.image && item.image !== "null"
+              ? item.image
+              : "https://via.placeholder.com/400x300?text=No+Image",
+        }));
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.brand.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+        setProducts(cleanedProducts);
+        console.log("✅ Products fetched:", cleanedProducts);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.brand.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCategory =
+      selectedCategory === "all" || product.category === selectedCategory;
+
     return matchesSearch && matchesCategory;
   });
 
@@ -138,7 +114,7 @@ const ProductCatalog = ({ onBack, onAddToCart, onViewCart, cartItemCount }: Prod
       toast({
         title: "Out of Stock",
         description: "This item is currently out of stock.",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -149,6 +125,18 @@ const ProductCatalog = ({ onBack, onAddToCart, onViewCart, cartItemCount }: Prod
       description: `${product.name} has been added to your cart.`,
     });
   };
+
+  const categories = [
+    { value: "all", label: "All Categories" },
+    { value: "oils", label: "Oils & Fluids" },
+    { value: "engine", label: "Engine Parts" },
+    { value: "tires", label: "Tires" },
+    { value: "brakes", label: "Brake System" },
+    { value: "electrical", label: "Electrical" },
+    { value: "filters", label: "Filters" },
+    { value: "maintenance", label: "Maintenance" },
+    { value: "other", label: "Other" },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -184,7 +172,10 @@ const ProductCatalog = ({ onBack, onAddToCart, onViewCart, cartItemCount }: Prod
                 className="pl-10"
               />
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
               <SelectTrigger>
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Category" />
@@ -227,7 +218,12 @@ const ProductCatalog = ({ onBack, onAddToCart, onViewCart, cartItemCount }: Prod
                   />
                   {product.originalPrice && (
                     <Badge className="absolute top-2 left-2 bg-red-500">
-                      {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                      {Math.round(
+                        ((product.originalPrice - product.price) /
+                          product.originalPrice) *
+                          100
+                      )}
+                      % OFF
                     </Badge>
                   )}
                   {!product.inStock && (
@@ -238,12 +234,18 @@ const ProductCatalog = ({ onBack, onAddToCart, onViewCart, cartItemCount }: Prod
                 </div>
               </CardHeader>
               <CardContent className="p-4">
-                <CardTitle className="text-lg mb-2 line-clamp-2">{product.name}</CardTitle>
+                <CardTitle className="text-lg mb-2 line-clamp-2">
+                  {product.name}
+                </CardTitle>
                 <div className="flex items-center mb-2">
                   <div className="flex items-center">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="ml-1 text-sm font-medium">{product.rating}</span>
-                    <span className="ml-1 text-xs text-gray-500">({product.reviews})</span>
+                    <span className="ml-1 text-sm font-medium">
+                      {product.rating}
+                    </span>
+                    <span className="ml-1 text-xs text-gray-500">
+                      ({product.reviews})
+                    </span>
                   </div>
                   <Badge variant="outline" className="ml-auto text-xs">
                     {product.brand}
@@ -261,8 +263,8 @@ const ProductCatalog = ({ onBack, onAddToCart, onViewCart, cartItemCount }: Prod
                     )}
                   </div>
                 </div>
-                <Button 
-                  className="w-full" 
+                <Button
+                  className="w-full"
                   onClick={() => handleAddToCart(product)}
                   disabled={!product.inStock}
                 >
@@ -276,7 +278,9 @@ const ProductCatalog = ({ onBack, onAddToCart, onViewCart, cartItemCount }: Prod
 
         {sortedProducts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No products found matching your criteria.</p>
+            <p className="text-gray-500 text-lg">
+              No products found matching your criteria.
+            </p>
           </div>
         )}
       </div>

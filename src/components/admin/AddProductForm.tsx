@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Package } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 const AddProductForm = () => {
   const [formData, setFormData] = useState({
@@ -18,23 +19,85 @@ const AddProductForm = () => {
     sku: "",
     supplier: "",
   });
+  
+  
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Adding new product:", formData);
-    // Handle form submission here
-    alert("Product added successfully!");
-    // Reset form
-    setFormData({
-      name: "",
-      category: "",
-      price: "",
-      stock: "",
-      description: "",
-      sku: "",
-      supplier: "",
-    });
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  const user = userData?.user;
+
+  if (!user) {
+    alert("User not authenticated");
+    return;
+  }
+
+  const { name, category, price, stock, description, sku, supplier } = formData;
+  let imageUrl = "https://via.placeholder.com/300"; // fallback
+
+  if (imageFile) {
+    const formData = new FormData();
+    formData.append("file", imageFile);
+    formData.append("upload_preset", "unsigned_upload"); // your Cloudinary preset
+
+    try {
+      const response = await fetch("https://api.cloudinary.com/v1_1/doqgdycnb/image/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data.secure_url) {
+        imageUrl = data.secure_url;
+      } else {
+        throw new Error("Image upload failed");
+      }
+    } catch (err) {
+      alert("Image upload failed: " + err.message);
+      return;
+    }
+  }
+
+  const { error } = await supabase.from("products").insert([
+    {
+      name,
+      category,
+      price: Number(price),
+      stock: Number(stock),
+      description,
+      sku,
+      supplier,
+      image: imageUrl,
+      brand: "Admin Added",
+      user_id: user.id,
+    },
+  ]);
+
+  if (error) {
+    alert("Failed to add product: " + error.message);
+    return;
+  }
+
+  alert("Product added successfully!");
+  setFormData({
+    name: "",
+    category: "",
+    price: "",
+    stock: "",
+    description: "",
+    sku: "",
+    supplier: "",
+  });
+  setImageFile(null);
+};
+
+
+  
+
+
+
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -164,7 +227,16 @@ const AddProductForm = () => {
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">Product image will appear here</p>
-                <Button variant="outline" className="mt-2">Upload Image</Button>
+                <div className="space-y-2">
+                    <Label htmlFor="image">Upload Image</Label>
+                    <Input
+                      id="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    />
+                </div>
+
               </div>
 
               <div className="space-y-2">
